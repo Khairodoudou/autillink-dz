@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   Mail,
-  Heart,
   ShieldCheck,
   Sparkles,
   Lock,
@@ -38,16 +37,6 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#163f56]/95 via-[#1D5B79]/65 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-radial-gradient from-transparent via-[#1D5B79]/30 to-[#163f56]/80 pointer-events-none" />
 
-          {/* Top Brand Badge */}
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
-              <Heart className="w-6 h-6 text-white fill-white" />
-            </div>
-            <div>
-              <span className="block text-xl font-800 text-white leading-none">أوتيلينك دي زي</span>
-              <span className="text-xs font-700 text-white/80 tracking-widest uppercase mt-0.5 block">AutiLink DZ</span>
-            </div>
-          </div>
 
           {/* Center Content Message */}
           <div className="relative z-10 my-auto py-10 max-w-lg">
