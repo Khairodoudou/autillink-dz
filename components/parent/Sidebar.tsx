@@ -21,6 +21,7 @@ const navItems = [
   { href: "/parent/daily-log",    label: "السجل اليومي", icon: ClipboardList },
   { href: "/parent/reports",      label: "التقارير",     icon: FileText },
   { href: "/parent/appointments", label: "المواعيد",     icon: Calendar },
+  { href: "/parent/chat",         label: "الدردشة والتواصل", icon: MessageSquare, badge: "قريباً 🔒" },
   { href: "/parent/subscription", label: "الاشتراك",     icon: CreditCard },
   { href: "/parent/settings",     label: "الإعدادات",    icon: Settings },
 ];
@@ -65,13 +66,13 @@ export default function ParentSidebar({ collapsed = false, onToggle }: SidebarPr
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, badge }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
+              className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
                 active
                   ? "text-white shadow-sm"
                   : "text-[#6B7280] hover:bg-[#F5E8D4] hover:text-[#1F2937]"
@@ -79,9 +80,16 @@ export default function ParentSidebar({ collapsed = false, onToggle }: SidebarPr
               style={active ? { backgroundColor: accent } : {}}
               title={collapsed ? label : undefined}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && (
-                <span className="text-sm font-600">{label}</span>
+              <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && (
+                  <span className="text-sm font-600">{label}</span>
+                )}
+              </div>
+              {!collapsed && badge && (
+                <span className="text-[10px] font-800 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  {badge}
+                </span>
               )}
             </Link>
           );
