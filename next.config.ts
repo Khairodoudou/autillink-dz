@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Required for @libsql/client to work correctly in Vercel serverless
+  serverExternalPackages: ["@libsql/client", "better-sqlite3"],
 };
 
 export default nextConfig;
