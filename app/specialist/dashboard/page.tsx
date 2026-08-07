@@ -61,7 +61,7 @@ export default function SpecialistDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const chartValues = profile?.weeklyStats || [3, 5, 4, 6, 3];
+  const chartValues = profile?.weeklyStats || [0, 0, 0, 0, 0];
   const totalWeeklySessions = chartValues.reduce((a: number, b: number) => a + b, 0);
 
   const chartData = {

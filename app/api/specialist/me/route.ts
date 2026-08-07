@@ -28,13 +28,12 @@ export async function GET() {
     const user = await getAuthenticatedSpecialist(session);
     if (!user) return apiErrors.notFound("المستخدم الأخصائي");
 
-    // Fetch patients assigned to this specialist (or all children if none assigned yet)
-    let patientsCount = await db.child.count({ where: { specialistId: user.id } });
-    if (patientsCount === 0) {
-      patientsCount = await db.child.count();
-    }
+    // Real patients count assigned to this specialist
+    const patientsCount = await db.child.count({
+      where: { specialistId: user.id },
+    });
 
-    // Sessions this week (Sunday to Thursday or current week)
+    // Real sessions this week for this specialist
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
@@ -46,7 +45,7 @@ export async function GET() {
 
     const sessionsThisWeek = await db.appointment.count({
       where: {
-        OR: [{ specialistId: user.id }, { specialistId: null }],
+        specialistId: user.id,
         date: {
           gte: startOfWeek,
           lte: endOfWeek,
@@ -54,7 +53,7 @@ export async function GET() {
       },
     });
 
-    // Total reports written or pending
+    // Total reports authored by this specialist
     const pendingReports = await db.report.count({
       where: {
         authorId: user.id,
@@ -62,7 +61,7 @@ export async function GET() {
       },
     });
 
-    // Unread messages count for this specialist
+    // Unread messages for this specialist
     const unreadMessages = await db.message.count({
       where: {
         receiverId: user.id,
@@ -74,7 +73,7 @@ export async function GET() {
     const dayCounts = [0, 0, 0, 0, 0]; // Sun, Mon, Tue, Wed, Thu
     const weekAppointments = await db.appointment.findMany({
       where: {
-        OR: [{ specialistId: user.id }, { specialistId: null }],
+        specialistId: user.id,
         date: {
           gte: startOfWeek,
           lte: endOfWeek,
@@ -90,23 +89,20 @@ export async function GET() {
       }
     });
 
-    // Fallback counts for demo chart if 0
-    const finalDayCounts = dayCounts.some((c) => c > 0) ? dayCounts : [3, 5, 4, 6, 3];
-
     const formatted = {
       id: user.id,
       name: user.name,
       speciality: user.speciality || "أخصائي توحد وتخاطب",
       email: user.email,
-      phone: user.phone || "0550 123 456",
-      centerName: user.center?.name || "مركز الأمل لرعاية التوحد",
-      licenseNumber: user.licenseNumber || "ALG-SLT-2020-0012",
-      experience: user.experience || 5,
-      patientsCount: patientsCount || 4,
-      sessionsThisWeek: sessionsThisWeek || 12,
-      pendingReports: pendingReports || 3,
-      unreadMessages: unreadMessages || 2,
-      weeklyStats: finalDayCounts,
+      phone: user.phone || "",
+      centerName: user.center?.name || "غير مسجل في مركز",
+      licenseNumber: user.licenseNumber || "",
+      experience: user.experience || 0,
+      patientsCount,
+      sessionsThisWeek,
+      pendingReports,
+      unreadMessages,
+      weeklyStats: dayCounts,
     };
 
     return ok(formatted);
