@@ -43,6 +43,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create 3-day grace period pending subscription (0 DA)
+    const now = new Date();
+    const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    await db.individualSubscription.create({
+      data: {
+        parentId: user.id,
+        price: 0,
+        startDate: now,
+        endDate: threeDaysLater,
+        status: "PENDING",
+      },
+    });
+
     const payload = {
       userId: user.id,
       role: user.role as "PARENT" | "SPECIALIST" | "ADMIN",

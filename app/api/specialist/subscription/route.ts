@@ -1,4 +1,4 @@
-// app/api/parent/subscription/route.ts
+// app/api/specialist/subscription/route.ts
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
@@ -7,7 +7,7 @@ import { ok, apiErrors } from "@/lib/api/response";
 export async function GET() {
   try {
     const session = await getSession();
-    if (!session || session.role !== "PARENT") return apiErrors.unauthorized();
+    if (!session || session.role !== "SPECIALIST") return apiErrors.unauthorized();
 
     let sub = await db.individualSubscription.findUnique({
       where: { parentId: session.userId },
@@ -49,7 +49,7 @@ export async function GET() {
 
     return ok(formatted);
   } catch (e) {
-    console.error("[GET /api/parent/subscription]", e);
+    console.error("[GET /api/specialist/subscription]", e);
     return apiErrors.internal();
   }
 }
@@ -57,10 +57,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || session.role !== "PARENT") return apiErrors.unauthorized();
+    if (!session || session.role !== "SPECIALIST") return apiErrors.unauthorized();
 
     const body = await req.json().catch(() => ({}));
-    const price = Number(body.price) || 2800;
+    const price = Number(body.price) || 3200;
     const isYearly = body.billingCycle === "yearly";
 
     const now = new Date();
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     });
 
     return ok({
-      message: "تم تفعيل الاشتراك بنجاح",
+      message: "تم تفعيل اشتراك الأخصائي بنجاح",
       subscription: {
         id: sub.id,
         price: sub.price,
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[POST /api/parent/subscription]", e);
+    console.error("[POST /api/specialist/subscription]", e);
     return apiErrors.internal();
   }
 }

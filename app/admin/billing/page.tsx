@@ -15,6 +15,7 @@ import {
   Users,
   Stethoscope,
   Building2,
+  CheckCheck,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
@@ -47,19 +48,42 @@ export default function AdminBillingPage() {
 
   const pageSize = 6;
 
-  useEffect(() => {
+  const loadBillingData = () => {
     fetch("/api/admin/billing")
       .then((res) => res.json())
       .then((res) => { if (res.ok) setEntries(res.data); })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadBillingData();
   }, []);
+
+  const confirmPayment = async (userId: string, type: string) => {
+    try {
+      const price = type === "أخصائي" ? 3200 : 2800;
+      const res = await fetch("/api/admin/billing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, price }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSentSuccess("✓ تم تأكيد السداد وتفعيل الاشتراك بنجاح");
+        loadBillingData();
+        setTimeout(() => setSentSuccess(null), 4500);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const openNotifyModal = (item: any) => {
     setNotifyTarget(item);
-    const amount = (item.price ?? 0).toLocaleString("ar-DZ");
-    const date = item.endDate ?? "قريباً";
+    const amount = (item.price || 2800).toLocaleString("ar-DZ");
+    const date = item.endDate ?? "خلال 3 أيام";
     setCustomMsg(
-      `نود تذكيركم بضرورة سداد مستحقات اشتراك منصة AutiLink DZ البالغة ${amount} دج، والمستحقة بتاريخ ${date}. شكراً لتفهمكم.`
+      `نود تذكيركم بضرورة سداد مستحقات اشتراك منصة AutiLink DZ البالغة ${amount} دج، والمستحقة قبل تاريخ ${date}. وإلا سيتم تعطيل الحساب. شكراً لتفهمكم.`
     );
   };
 
@@ -195,7 +219,7 @@ export default function AdminBillingPage() {
             <table className="w-full text-right">
               <thead>
                 <tr className="border-b border-[#E5D9F2] bg-[#F5F0FA]">
-                  {["المشترك", "النوع", "الخطة", "المبلغ / شهرياً", "انتهاء الاشتراك", "حالة الدفع", "إجراء"].map((h) => (
+                  {["المشترك", "النوع", "الخطة", "المبلغ المدفوع", "انتهاء مهلة السداد", "حالة الدفع", "إجراء"].map((h) => (
                     <th key={h} className="px-4 py-3 text-xs font-800 text-[#6B7280] uppercase tracking-wide">
                       {h}
                     </th>
@@ -240,20 +264,32 @@ export default function AdminBillingPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {isSent ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-700 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <Check className="w-3.5 h-3.5" />
-                            تم الإرسال
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => openNotifyModal(c)}
-                            className="flex items-center gap-1.5 text-xs font-700 px-3 py-1.5 rounded-xl border border-[#E5D9F2] hover:bg-[#F0EBF8] text-[#6B4C93] transition-colors"
-                          >
-                            <Bell className="w-3.5 h-3.5" />
-                            إشعار
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {c.status !== "مدفوع" && c.userId && (
+                            <button
+                              onClick={() => confirmPayment(c.userId, c.type)}
+                              className="flex items-center gap-1 text-xs font-700 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+                              title="تأكيد تحصيل المبلغ وتفعيل الاشتراك"
+                            >
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              تأكيد السداد
+                            </button>
+                          )}
+                          {isSent ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-700 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check className="w-3.5 h-3.5" />
+                              تم الإرسال
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => openNotifyModal(c)}
+                              className="flex items-center gap-1.5 text-xs font-700 px-3 py-1.5 rounded-xl border border-[#E5D9F2] hover:bg-[#F0EBF8] text-[#6B4C93] transition-colors"
+                            >
+                              <Bell className="w-3.5 h-3.5" />
+                              إشعار
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

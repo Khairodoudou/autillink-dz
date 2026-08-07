@@ -1,8 +1,9 @@
 "use client";
 // app/parent/layout.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import ParentSidebar from "@/components/parent/Sidebar";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, AlertTriangle, Lock, CreditCard } from "lucide-react";
 
 export default function ParentLayout({
   children,
@@ -11,6 +12,29 @@ export default function ParentLayout({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [subInfo, setSubInfo] = useState<{
+    status?: string;
+    daysLeft?: number;
+    endDate?: string;
+    isSuspended?: boolean;
+  }>({});
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    fetch("/api/parent/subscription")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok && res.data) {
+          setSubInfo(res.data);
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
+
+  const isPending = subInfo.status === "PENDING";
+  const isSuspended = subInfo.isSuspended;
+  const isSubscriptionPage = pathname === "/parent/subscription";
 
   return (
     <div className="flex h-screen bg-[#FDF6EC] overflow-hidden" dir="rtl">
@@ -76,10 +100,51 @@ export default function ParentLayout({
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {children}
-        </main>
+        {/* 3-Day Grace Period Warning Banner (Active when PENDING & not suspended) */}
+        {isPending && !isSuspended && (
+          <div className="bg-amber-500 text-white px-4 py-3 border-b border-amber-600 flex items-center justify-between gap-3 shadow-sm flex-shrink-0 animate-fadeIn">
+            <div className="flex items-center gap-2 text-sm font-700">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-100" />
+              <span>
+                تنبيه هام: يلزم سداد الاشتراك خلال 3 أيام (قبل {subInfo.endDate || "3 أيام"})، وإلا سيتم تعطيل الحساب.
+              </span>
+            </div>
+            <a
+              href="/parent/subscription"
+              className="px-4 py-1.5 bg-white text-amber-900 font-800 rounded-xl text-xs hover:bg-amber-100 transition-colors flex items-center gap-1 flex-shrink-0"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              سداد الاشتراك الآن
+            </a>
+          </div>
+        )}
+
+        {/* Account Suspension Banner / Block (When >3 days pass without payment) */}
+        {isSuspended && !isSubscriptionPage ? (
+          <div className="flex-1 flex items-center justify-center p-6 bg-[#FDF6EC]">
+            <div className="max-w-md w-full bg-white rounded-3xl border border-red-200 p-8 text-center shadow-xl space-y-4">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-900 text-gray-900">تم تعطيل الحساب مؤقتاً</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                انتهت فترة المهلة (3 أيام) دون سداد قيمة الاشتراك. يرجى اختيار الباقة وإتمام السداد لإعادة تفعيل الحساب فوراً.
+              </p>
+              <a
+                href="/parent/subscription"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 bg-[#2E8B7E] text-white font-800 rounded-xl text-sm hover:bg-[#236b61] transition-colors shadow"
+              >
+                <CreditCard className="w-4 h-4" />
+                الانتقال لصفحة الدفع والاشتراك
+              </a>
+            </div>
+          </div>
+        ) : (
+          /* Page Content */
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        )}
       </div>
     </div>
   );

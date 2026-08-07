@@ -1,58 +1,88 @@
 "use client";
 // app/parent/subscription/page.tsx
-import { useState } from "react";
-import { CreditCard, Check, Star, Zap, Shield, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  CreditCard,
+  Check,
+  Star,
+  Zap,
+  Shield,
+  ChevronRight,
+  AlertTriangle,
+  Gamepad2,
+  Sparkles,
+  Puzzle,
+  SmilePlus,
+  Volume2,
+  Palette,
+  Trophy,
+} from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 
-const plans = [
+type BillingCycle = "monthly" | "yearly";
+
+const basePlans = [
   {
     id: "basic",
     name: "الأساسي",
-    price: 1_200,
-    period: "شهرياً",
+    monthlyPrice: 1_200,
     color: "#1D5B79",
     bg: "#1D5B7915",
     features: [
       "متابعة طفل واحد",
-      "السجل اليومي",
-      "التقارير الأساسية",
+      "السجل اليومي والتقارير الأساسية",
       "المواعيد (حتى 4/شهر)",
-      "دعم عبر البريد",
+      "دعم عبر البريد الإلكتروني",
+    ],
+    gameFeatures: [
+      "وصول لألعاب التقييم والتركيز الأساسية",
+      "لعبة مطابقة الألوان والأشكال الأوليّة",
+      "تتبع إحصائيات مدة اللعب اليومية",
     ],
     recommended: false,
   },
   {
     id: "pro",
     name: "المتميز",
-    price: 2_800,
-    period: "شهرياً",
+    monthlyPrice: 2_800,
     color: "#2E8B7E",
     bg: "#2E8B7E15",
     features: [
       "متابعة حتى 3 أطفال",
-      "السجل اليومي + إحصائيات",
-      "جميع التقارير + PDF",
-      "مواعيد غير محدودة",
-      "رسائل مباشرة مع الأخصائي",
-      "وضع الطفل التفاعلي",
+      "السجل اليومي + إحصائيات بيانية",
+      "جميع التقارير + تصدير PDF",
+      "مواعيد وسجل التواصل غير محدود",
+      "رسائل مباشرة مع الأخصائي المتابع",
       "دعم ذو أولوية",
+    ],
+    gameFeatures: [
+      "مكتبة كاملة لألعاب الأطفال التفاعلية",
+      "ألعاب التمييز السمعي وجوه المشاعر",
+      "فتح جميع مستويات اللعب دون إعلانات",
+      "وضع الطفل التفاعلي (Kids Mode) محمي بـ PIN",
+      "تقارير تفاعلية أسبوعية لتقدم الطفل في الألعاب",
     ],
     recommended: true,
   },
   {
     id: "premium",
     name: "البريميوم",
-    price: 4_500,
-    period: "شهرياً",
+    monthlyPrice: 4_500,
     color: "#6B4C93",
     bg: "#6B4C9315",
     features: [
       "أطفال غير محدودون",
-      "كل مميزات المتميز",
-      "تقارير تحليلية متقدمة",
-      "استشارة شهرية مع متخصص",
-      "إشعارات فورية",
-      "دعم 24/7",
+      "كل مميزات الخطة المتميزة",
+      "تقارير تحليلية وتنبؤية متقدمة",
+      "استشارة شهرية مخصصة مع متخصص",
+      "إشعارات وتنبيهات فورية",
+      "دعم فني واستشاري 24/7",
+    ],
+    gameFeatures: [
+      "جميع ألعاب الأطفال + ألعاب الذكاء الاصطناعي التكيفية (AI)",
+      "ألعاب وتحديات مخصصة لتنمية المهارات بطلب الأخصائي",
+      "تحليل سلوكي دقيق لسرعة الاستجابة والتركيز أثناء اللعب",
+      "مزامنة ألعاب الطفل وإنجازاته عبر جميع الأجهزة",
     ],
     recommended: false,
   },
@@ -62,7 +92,17 @@ type Step = "plans" | "payment" | "confirm";
 
 export default function SubscriptionPage() {
   const [step, setStep] = useState<Step>("plans");
-  const [selectedPlan, setSelectedPlan] = useState(plans[1]);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("pro");
+
+  const [subInfo, setSubInfo] = useState<{
+    status?: string;
+    price?: number;
+    endDate?: string;
+    isSuspended?: boolean;
+    statusLabel?: string;
+    plan?: string;
+  }>({});
   const [cardData, setCardData] = useState({
     number: "",
     name: "",
@@ -71,12 +111,66 @@ export default function SubscriptionPage() {
   });
   const [processing, setProcessing] = useState(false);
 
-  const handlePay = () => {
+  useEffect(() => {
+    fetch("/api/parent/subscription")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.ok && res.data) {
+          setSubInfo(res.data);
+        }
+      });
+  }, [step]);
+
+  // Calculate current active plan pricing
+  const currentPlans = basePlans.map((p) => {
+    const isYearly = billingCycle === "yearly";
+    // 17% discount for yearly
+    const yearlyTotalPrice = Math.round(p.monthlyPrice * 12 * 0.83);
+    const yearlyMonthlyEquivalent = Math.round(yearlyTotalPrice / 12);
+    const originalYearly = p.monthlyPrice * 12;
+    const savings = originalYearly - yearlyTotalPrice;
+
+    return {
+      ...p,
+      price: isYearly ? yearlyTotalPrice : p.monthlyPrice,
+      monthlyEquivalent: isYearly ? yearlyMonthlyEquivalent : p.monthlyPrice,
+      originalPrice: isYearly ? originalYearly : null,
+      savings: isYearly ? savings : 0,
+      periodLabel: isYearly ? "سنوياً" : "شهرياً",
+    };
+  });
+
+  const selectedPlan =
+    currentPlans.find((p) => p.id === selectedPlanId) || currentPlans[1];
+
+  const handlePay = async () => {
     setProcessing(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/parent/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price: selectedPlan.price,
+          billingCycle,
+          planId: selectedPlan.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSubInfo({
+          status: "ACTIVE",
+          price: selectedPlan.price,
+          statusLabel: "نشط",
+          plan: selectedPlan.name,
+          endDate: data.data.subscription?.endDate,
+        });
+        setStep("confirm");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       setProcessing(false);
-      setStep("confirm");
-    }, 2000);
+    }
   };
 
   const formatCard = (value: string) =>
@@ -96,32 +190,38 @@ export default function SubscriptionPage() {
         <p className="text-[#6B7280] mb-2">
           مرحباً بك في خطة{" "}
           <span className="font-800" style={{ color: selectedPlan.color }}>
-            {selectedPlan.name}
+            {selectedPlan.name} ({selectedPlan.periodLabel})
           </span>
         </p>
         <p className="text-sm text-[#9CA3AF] mb-8">
-          سيتم تجديد اشتراكك تلقائياً في 4 سبتمبر 2026
+          تم سداد المبلغ وتفعيل ميزات ألعاب الأطفال والحساب بنجاح.
         </p>
-        <div className="bg-white rounded-2xl border border-[#E8D8C4] p-5 mb-6 text-right space-y-3">
+        <div className="bg-white rounded-2xl border border-[#E8D8C4] p-5 mb-6 text-right space-y-3 shadow-sm">
           <div className="flex justify-between text-sm">
-            <span className="font-700 text-[#1F2937]">{selectedPlan.name}</span>
+            <span className="font-700 text-[#1F2937]">
+              {selectedPlan.name} ({selectedPlan.periodLabel})
+            </span>
             <span className="text-[#6B7280]">الخطة المختارة</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="font-700 text-[#2E8B7E]">{selectedPlan.price.toLocaleString("ar-DZ")} دج</span>
+            <span className="font-700 text-[#2E8B7E]">
+              {selectedPlan.price.toLocaleString("ar-DZ")} دج
+            </span>
             <span className="text-[#6B7280]">المبلغ المدفوع</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="font-700 text-[#1F2937]">•••• {cardData.number.slice(-4) || "1234"}</span>
+            <span className="font-700 text-[#1F2937]">
+              •••• {cardData.number.slice(-4) || "1234"}
+            </span>
             <span className="text-[#6B7280]">طريقة الدفع</span>
           </div>
         </div>
-        <button
-          onClick={() => setStep("plans")}
-          className="px-6 py-3 bg-[#2E8B7E] text-white rounded-xl text-sm font-700 hover:bg-[#22685e] transition-colors"
+        <a
+          href="/parent/dashboard"
+          className="inline-block px-6 py-3 bg-[#2E8B7E] text-white rounded-xl text-sm font-700 hover:bg-[#22685e] transition-colors shadow"
         >
-          العودة إلى الاشتراك
-        </button>
+          الانتقال إلى لوحة التحكم
+        </a>
       </div>
     );
   }
@@ -131,7 +231,7 @@ export default function SubscriptionPage() {
       <div>
         <PageHeader
           title="إتمام الدفع"
-          subtitle={`خطة ${selectedPlan.name} — ${selectedPlan.price.toLocaleString("ar-DZ")} دج/شهر`}
+          subtitle={`خطة ${selectedPlan.name} — ${selectedPlan.price.toLocaleString("ar-DZ")} دج / ${selectedPlan.periodLabel}`}
           icon={CreditCard}
           iconColor={selectedPlan.color}
           iconBg={selectedPlan.bg}
@@ -140,7 +240,9 @@ export default function SubscriptionPage() {
           {/* Card Preview */}
           <div
             className="rounded-2xl p-6 mb-6 text-white relative overflow-hidden shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${selectedPlan.color}, ${selectedPlan.color}99)` }}
+            style={{
+              background: `linear-gradient(135deg, ${selectedPlan.color}, ${selectedPlan.color}99)`,
+            }}
           >
             <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-white/10 translate-y-1/2 -translate-x-1/2" />
@@ -160,20 +262,26 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl border border-[#E8D8C4] p-6 space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E8D8C4] p-6 space-y-4 shadow-sm">
             <div>
-              <label className="text-sm font-600 text-[#6B7280] block mb-1.5">رقم البطاقة</label>
+              <label className="text-sm font-600 text-[#6B7280] block mb-1.5">
+                رقم البطاقة
+              </label>
               <input
                 type="text"
                 value={cardData.number}
-                onChange={(e) => setCardData({ ...cardData, number: formatCard(e.target.value) })}
+                onChange={(e) =>
+                  setCardData({ ...cardData, number: formatCard(e.target.value) })
+                }
                 placeholder="1234 5678 9012 3456"
                 className="input-rtl tracking-widest"
                 maxLength={19}
               />
             </div>
             <div>
-              <label className="text-sm font-600 text-[#6B7280] block mb-1.5">اسم حامل البطاقة</label>
+              <label className="text-sm font-600 text-[#6B7280] block mb-1.5">
+                اسم حامل البطاقة
+              </label>
               <input
                 type="text"
                 value={cardData.name}
@@ -184,7 +292,9 @@ export default function SubscriptionPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-600 text-[#6B7280] block mb-1.5">تاريخ الانتهاء</label>
+                <label className="text-sm font-600 text-[#6B7280] block mb-1.5">
+                  تاريخ الانتهاء
+                </label>
                 <input
                   type="text"
                   value={cardData.expiry}
@@ -195,11 +305,18 @@ export default function SubscriptionPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-600 text-[#6B7280] block mb-1.5">CVV</label>
+                <label className="text-sm font-600 text-[#6B7280] block mb-1.5">
+                  CVV
+                </label>
                 <input
                   type="text"
                   value={cardData.cvv}
-                  onChange={(e) => setCardData({ ...cardData, cvv: e.target.value.replace(/\D/g, "").slice(0, 3) })}
+                  onChange={(e) =>
+                    setCardData({
+                      ...cardData,
+                      cvv: e.target.value.replace(/\D/g, "").slice(0, 3),
+                    })
+                  }
                   placeholder="•••"
                   className="input-rtl"
                   maxLength={3}
@@ -207,14 +324,20 @@ export default function SubscriptionPage() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#F5E8D4] flex justify-between items-center">
-              <span className="text-sm text-[#6B7280]">المجموع</span>
-              <span className="text-lg font-900 text-[#1F2937]">
-                {selectedPlan.price.toLocaleString("ar-DZ")} دج
-              </span>
+            <div className="pt-3 border-t border-[#F5E8D4] space-y-1.5">
+              <div className="flex justify-between items-center text-xs text-[#6B7280]">
+                <span>دورة الفوترة</span>
+                <span>{billingCycle === "yearly" ? "سنوية (-17%)" : "شهرية"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-700 text-[#6B7280]">المجموع النهائي</span>
+                <span className="text-xl font-900 text-[#1F2937]">
+                  {selectedPlan.price.toLocaleString("ar-DZ")} دج
+                </span>
+              </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep("plans")}
                 className="px-4 py-3 border border-[#E8D8C4] rounded-xl text-sm font-700 text-[#6B7280] hover:bg-[#F5E8D4] transition-colors"
@@ -224,7 +347,7 @@ export default function SubscriptionPage() {
               <button
                 onClick={handlePay}
                 disabled={processing}
-                className="flex-1 py-3 text-white rounded-xl text-sm font-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                className="flex-1 py-3 text-white rounded-xl text-sm font-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 shadow"
                 style={{ backgroundColor: selectedPlan.color }}
               >
                 {processing ? (
@@ -243,91 +366,274 @@ export default function SubscriptionPage() {
     );
   }
 
+  const isActive = subInfo.status === "ACTIVE";
+
   return (
     <div>
       <PageHeader
-        title="الاشتراك والباقات"
-        subtitle="اختر الباقة المناسبة لطفلك ومتابعة تطوره"
+        title="الاشتراك والباقات للأولياء"
+        subtitle="اختر الباقة المناسبة لمتابعة طفلك والوصول إلى ألعاب تنمية المهارات والتركيز"
         icon={CreditCard}
         iconColor="#2E8B7E"
         iconBg="#2E8B7E15"
       />
 
       {/* Current Plan Banner */}
-      <div className="bg-[#2E8B7E]/10 border border-[#2E8B7E]/30 rounded-2xl p-4 mb-8 flex items-center justify-between">
+      <div
+        className={`border rounded-2xl p-4 mb-8 flex items-center justify-between shadow-sm ${
+          isActive
+            ? "bg-[#2E8B7E]/10 border-[#2E8B7E]/30"
+            : "bg-amber-50 border-amber-300"
+        }`}
+      >
         <div>
-          <p className="text-sm font-800 text-[#2E8B7E]">اشتراكك الحالي: المتميز</p>
-          <p className="text-xs text-[#6B7280] mt-0.5">ينتهي في 4 سبتمبر 2026 — التجديد التلقائي مفعّل</p>
+          <p
+            className={`text-sm font-800 ${
+              isActive ? "text-[#2E8B7E]" : "text-amber-900"
+            }`}
+          >
+            اشتراكك الحالي: {isActive ? subInfo.plan || "المتميز" : "الخطة التجريبية (0 دج)"}
+          </p>
+          <p className="text-xs text-[#6B7280] mt-0.5">
+            {isActive
+              ? `ينتهي في ${subInfo.endDate || "الشهر القادم"} — الاشتراك نشط`
+              : `يلزم سداد الاشتراك خلال 3 أيام قبل ${
+                  subInfo.endDate || "تاريخ انتهاء فترة التجربة"
+                }`}
+          </p>
         </div>
-        <span className="text-xs font-700 px-3 py-1.5 bg-[#2E8B7E] text-white rounded-full">نشط</span>
+        <span
+          className={`text-xs font-700 px-3 py-1.5 rounded-full ${
+            isActive
+              ? "bg-[#2E8B7E] text-white"
+              : "bg-amber-600 text-white flex items-center gap-1"
+          }`}
+        >
+          {!isActive && <AlertTriangle className="w-3.5 h-3.5" />}
+          {isActive ? "نشط" : "معلق (0 دج)"}
+        </span>
+      </div>
+
+      {/* Interactive Children Games Feature Banner */}
+      <div className="bg-gradient-to-r from-[#2E8B7E]/10 via-[#1D5B79]/10 to-[#6B4C93]/10 border border-[#2E8B7E]/20 rounded-3xl p-6 mb-8 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#2E8B7E] text-white flex items-center justify-center shadow">
+              <Gamepad2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-900 text-[#1F2937] flex items-center gap-2">
+                ألعاب الأطفال التعليمية والتفاعلية
+                <span className="px-2.5 py-0.5 bg-[#2E8B7E] text-white text-xs font-800 rounded-full">
+                  مضمّنة بالاشتراك
+                </span>
+              </h3>
+              <p className="text-xs text-[#6B7280] mt-0.5">
+                تطوير التركيز والنطق وتطوير المهارات الحركية والعاطفية من خلال ألعاب مصممة علمياً
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white/80 backdrop-blur rounded-2xl p-3.5 border border-[#2E8B7E]/20 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+              <Palette className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-800 text-[#1F2937]">مطابقة الألوان والأشكال</p>
+              <p className="text-[11px] text-[#6B7280]">تنمية التناغم والإدراك</p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur rounded-2xl p-3.5 border border-[#2E8B7E]/20 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+              <Volume2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-800 text-[#1F2937]">التمييز السمعي والأصوات</p>
+              <p className="text-[11px] text-[#6B7280]">تحفيز النطق واللغة</p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur rounded-2xl p-3.5 border border-[#2E8B7E]/20 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+              <SmilePlus className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-800 text-[#1F2937]">وجوه المشاعر والذكاء</p>
+              <p className="text-[11px] text-[#6B7280]">تطوير التعبير والتواصل</p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur rounded-2xl p-3.5 border border-[#2E8B7E]/20 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-800 text-[#1F2937]">ألعاب AI التكيفية</p>
+              <p className="text-[11px] text-[#6B7280]">تحليلات ذكية لأداء الطفل</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Monthly / Annual Toggle Switch */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-[#E8D8C4]/40 p-1.5 rounded-2xl flex items-center border border-[#E8D8C4] shadow-inner">
+          <button
+            onClick={() => setBillingCycle("monthly")}
+            className={`px-6 py-2.5 rounded-xl text-sm font-800 transition-all ${
+              billingCycle === "monthly"
+                ? "bg-white text-[#1F2937] shadow-sm"
+                : "text-[#6B7280] hover:text-[#1F2937]"
+            }`}
+          >
+            اشتراك شهري
+          </button>
+          <button
+            onClick={() => setBillingCycle("yearly")}
+            className={`px-6 py-2.5 rounded-xl text-sm font-800 transition-all flex items-center gap-2 ${
+              billingCycle === "yearly"
+                ? "bg-[#2E8B7E] text-white shadow-sm"
+                : "text-[#6B7280] hover:text-[#1F2937]"
+            }`}
+          >
+            <span>اشتراك سنوي</span>
+            <span className="px-2 py-0.5 bg-amber-400 text-amber-950 text-[11px] font-900 rounded-full animate-pulse">
+              خصم 17%
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            onClick={() => setSelectedPlan(plan)}
-            className={`bg-white rounded-2xl border-2 p-6 cursor-pointer transition-all relative hover:-translate-y-1 hover:shadow-lg ${
-              selectedPlan.id === plan.id
-                ? "shadow-lg -translate-y-1"
-                : "border-[#E8D8C4]"
-            }`}
-            style={selectedPlan.id === plan.id ? { borderColor: plan.color } : {}}
-          >
-            {plan.recommended && (
-              <div
-                className="absolute -top-3 right-1/2 translate-x-1/2 px-3 py-1 rounded-full text-xs font-800 text-white flex items-center gap-1"
-                style={{ backgroundColor: plan.color }}
-              >
-                <Star className="w-3 h-3" /> الأكثر اختياراً
-              </div>
-            )}
-
+        {currentPlans.map((plan) => {
+          const isSelected = selectedPlanId === plan.id;
+          return (
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ backgroundColor: plan.bg }}
+              key={plan.id}
+              onClick={() => setSelectedPlanId(plan.id)}
+              className={`bg-white rounded-2xl border-2 p-6 cursor-pointer transition-all relative flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg ${
+                isSelected ? "shadow-lg -translate-y-1" : "border-[#E8D8C4]"
+              }`}
+              style={isSelected ? { borderColor: plan.color } : {}}
             >
-              <Zap className="w-6 h-6" style={{ color: plan.color }} />
+              {plan.recommended && (
+                <div
+                  className="absolute -top-3 right-1/2 translate-x-1/2 px-3.5 py-1 rounded-full text-xs font-800 text-white flex items-center gap-1 shadow"
+                  style={{ backgroundColor: plan.color }}
+                >
+                  <Star className="w-3.5 h-3.5" /> الأكثر اختياراً
+                </div>
+              )}
+
+              <div>
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                  style={{ backgroundColor: plan.bg }}
+                >
+                  <Zap className="w-6 h-6" style={{ color: plan.color }} />
+                </div>
+
+                <h3 className="text-lg font-900 text-[#1F2937] mb-1">{plan.name}</h3>
+
+                {/* Price Display */}
+                <div className="mb-5">
+                  {billingCycle === "yearly" && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-[#9CA3AF] line-through">
+                        {(plan.monthlyPrice * 12).toLocaleString("ar-DZ")} دج
+                      </span>
+                      <span className="text-xs font-800 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                        وفر {plan.savings.toLocaleString("ar-DZ")} دج (-17%)
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-end gap-1">
+                    <span
+                      className="text-3xl font-900"
+                      style={{ color: plan.color }}
+                    >
+                      {plan.price.toLocaleString("ar-DZ")}
+                    </span>
+                    <span className="text-sm text-[#6B7280] mb-1">
+                      دج / {plan.periodLabel}
+                    </span>
+                  </div>
+                  {billingCycle === "yearly" && (
+                    <p className="text-[11px] text-[#6B7280] mt-1">
+                      تعادل {plan.monthlyEquivalent.toLocaleString("ar-DZ")} دج / شهرياً
+                    </p>
+                  )}
+                </div>
+
+                {/* General Features */}
+                <p className="text-xs font-800 text-[#1F2937] mb-2 uppercase tracking-wider">
+                  مميزات المتابعة:
+                </p>
+                <ul className="space-y-2 mb-5">
+                  {plan.features.map((f, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-[#4B5563]"
+                    >
+                      <Check
+                        className="w-4 h-4 flex-shrink-0 mt-0.5"
+                        style={{ color: plan.color }}
+                      />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Children Games Features Section */}
+                <div className="pt-4 border-t border-[#F5E8D4] mb-6">
+                  <p className="text-xs font-800 text-[#2E8B7E] mb-2.5 flex items-center gap-1.5">
+                    <Gamepad2 className="w-4 h-4" />
+                    ميزات ألعاب الأطفال:
+                  </p>
+                  <ul className="space-y-2">
+                    {plan.gameFeatures.map((gf, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-xs text-[#374151]"
+                      >
+                        <Puzzle
+                          className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[#2E8B7E]"
+                        />
+                        <span>{gf}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setSelectedPlanId(plan.id);
+                  setStep("payment");
+                }}
+                className="w-full py-2.5 rounded-xl text-sm font-700 transition-colors flex items-center justify-center gap-2 mt-2 shadow-sm"
+                style={
+                  isSelected
+                    ? { backgroundColor: plan.color, color: "#fff" }
+                    : { backgroundColor: plan.bg, color: plan.color }
+                }
+              >
+                اختيار هذه الباقة ({plan.periodLabel})
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-
-            <h3 className="text-lg font-900 text-[#1F2937] mb-1">{plan.name}</h3>
-            <div className="flex items-end gap-1 mb-5">
-              <span className="text-3xl font-900" style={{ color: plan.color }}>
-                {plan.price.toLocaleString("ar-DZ")}
-              </span>
-              <span className="text-sm text-[#6B7280] mb-1">دج / {plan.period}</span>
-            </div>
-
-            <ul className="space-y-2.5 mb-6">
-              {plan.features.map((f, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-[#6B7280]">
-                  <Check className="w-4 h-4 flex-shrink-0" style={{ color: plan.color }} />
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => { setSelectedPlan(plan); setStep("payment"); }}
-              className="w-full py-2.5 rounded-xl text-sm font-700 transition-colors flex items-center justify-center gap-2"
-              style={
-                selectedPlan.id === plan.id
-                  ? { backgroundColor: plan.color, color: "#fff" }
-                  : { backgroundColor: plan.bg, color: plan.color }
-              }
-            >
-              اختر هذه الباقة
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Security note */}
       <p className="text-center text-xs text-[#9CA3AF] flex items-center justify-center gap-2">
         <Shield className="w-4 h-4" />
-        جميع المعاملات مشفرة ومحمية — يمكنك الإلغاء في أي وقت
+        جميع المعاملات مشفرة ومحمية — يمكنك التبديل أو الإلغاء في أي وقت
       </p>
     </div>
   );
