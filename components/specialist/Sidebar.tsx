@@ -7,8 +7,8 @@ import {
   Users,
   ClipboardCheck,
   Calendar,
-  MessageSquare,
   FileText,
+  CreditCard,
   ChevronLeft,
   LogOut,
 } from "lucide-react";
@@ -18,8 +18,8 @@ const navItems = [
   { href: "/specialist/patients",     label: "مرضاي",          icon: Users },
   { href: "/specialist/assessments",  label: "أدوات التقييم",  icon: ClipboardCheck },
   { href: "/specialist/appointments", label: "جدول الجلسات",  icon: Calendar },
-  { href: "/specialist/messages",     label: "الرسائل",        icon: MessageSquare },
   { href: "/specialist/reports/new",  label: "كتابة تقرير",   icon: FileText },
+  { href: "/specialist/subscription", label: "الاشتراك",       icon: CreditCard },
 ];
 
 interface SidebarProps {

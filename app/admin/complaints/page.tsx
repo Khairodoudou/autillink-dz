@@ -1,11 +1,9 @@
 "use client";
 // app/admin/complaints/page.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertCircle, X, MessageSquare, Search } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
-import { mockComplaints } from "@/lib/mock-data";
-import type { Complaint } from "@/lib/mock-data";
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
   نشط:   { color: "#EF4444", bg: "#EF444415" },
@@ -20,12 +18,27 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function AdminComplaintsPage() {
-  const [complaints, setComplaints] = useState<Complaint[]>(mockComplaints);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("الكل");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3;
+  const [loading, setLoading] = useState(true);
+  const pageSize = 4;
+
+  const loadComplaints = () => {
+    setLoading(true);
+    fetch("/api/admin/complaints")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.ok) setComplaints(res.data);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadComplaints();
+  }, []);
 
   const statuses = ["الكل", "نشط", "معالج", "مغلق"];
 
@@ -45,7 +58,7 @@ export default function AdminComplaintsPage() {
       )
     );
     if (selectedComplaint?.id === id) {
-      setSelectedComplaint((prev) =>
+      setSelectedComplaint((prev: any) =>
         prev ? { ...prev, status: "معالج" as const, resolution: "تمت معالجة الشكوى بنجاح من قبل قسم الدعم." } : null
       );
     }

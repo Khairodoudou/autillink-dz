@@ -1,9 +1,9 @@
 "use client";
 // app/child-mode/[id]/page.tsx
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Star, Flame, Gamepad2, MessageSquare, BookOpen, Home, ArrowLeft } from "lucide-react";
-import { mockChildren } from "@/lib/mock-data";
 
 const sections = [
   {
@@ -43,7 +43,36 @@ const sections = [
 export default function ChildHomePage() {
   const params = useParams();
   const childId = params.id as string;
-  const child = mockChildren.find((c) => c.id === childId) ?? mockChildren[0];
+  const [child, setChild] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`/api/child/${childId}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) {
+          setChild(res.data);
+        } else {
+          setChild({
+            name: "الطفل",
+            avatarColor: "#E97F6B",
+            avatarInitial: "ط",
+            stars: 0,
+            streakDays: 1,
+          });
+        }
+      })
+      .catch(() => {
+        setChild({
+          name: "الطفل",
+          avatarColor: "#E97F6B",
+          avatarInitial: "ط",
+          stars: 0,
+          streakDays: 1,
+        });
+      });
+  }, [childId]);
+
+  if (!child) return <div className="min-h-screen p-12 text-center text-[#9CA3AF]">جاري التحميل...</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF8F6] via-[#FDF6EC] to-[#FFF0EB]">

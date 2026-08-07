@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Delete, ChevronRight, Star } from "lucide-react";
-import { mockChildren } from "@/lib/mock-data";
 import Link from "next/link";
 
 export default function EnterPinPage() {
   const router = useRouter();
   const params = useParams();
   const childId = params.id as string;
-  const child = mockChildren.find((c) => c.id === childId);
 
   const [pin, setPin] = useState<string>("");
   const [error, setError] = useState(false);
@@ -20,19 +18,37 @@ export default function EnterPinPage() {
 
   useEffect(() => {
     if (pin.length === 4) {
-      if (pin === (child?.pin ?? "1234")) {
-        router.push(`/child-mode/${childId}`);
-      } else {
-        setError(true);
-        setShake(true);
-        setTimeout(() => {
-          setPin("");
-          setError(false);
-          setShake(false);
-        }, 700);
-      }
+      fetch(`/api/parent/children/${childId}/verify-pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.ok && res.data.redirectTo) {
+            router.push(res.data.redirectTo);
+            router.refresh();
+          } else {
+            setError(true);
+            setShake(true);
+            setTimeout(() => {
+              setPin("");
+              setError(false);
+              setShake(false);
+            }, 700);
+          }
+        })
+        .catch(() => {
+          setError(true);
+          setShake(true);
+          setTimeout(() => {
+            setPin("");
+            setError(false);
+            setShake(false);
+          }, 700);
+        });
     }
-  }, [pin, child, childId, router]);
+  }, [pin, childId, router]);
 
   const handleDigit = (d: number | null | "del") => {
     if (d === "del") {
@@ -44,7 +60,7 @@ export default function EnterPinPage() {
     setPin((p) => p + String(d));
   };
 
-  const avatarBg = child?.avatarColor ?? "#E97F6B";
+  const avatarBg = "#E97F6B";
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#FFF8F6] via-[#FDF6EC] to-[#FFF0EB] px-4">
@@ -62,11 +78,11 @@ export default function EnterPinPage() {
         className="w-24 h-24 rounded-3xl flex items-center justify-center text-white text-4xl font-900 shadow-lg mb-4"
         style={{ backgroundColor: avatarBg }}
       >
-        {child?.avatarInitial ?? "؟"}
+        🔒
       </div>
 
       <h1 className="text-2xl font-900 text-[#1F2937] mb-1">
-        {child?.name ?? "طفل"}
+        وضع الطفل
       </h1>
       <p className="text-sm text-[#6B7280] mb-8">أدخل رمز PIN للدخول</p>
 

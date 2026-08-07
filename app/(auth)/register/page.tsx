@@ -50,26 +50,60 @@ const roles = [
     title: "أدوات تقييم ومتابعة دقيقة للمرضى",
     subtitle: "أدر حالاتك المرضية، أنشئ التقارير السريرية فورياً وتواصل بفعالية مع الأولياء والمركز.",
   },
-  {
-    id: "admin",
-    label: "إدارة مركز",
-    sublabel: "مدير مركز أو جمعية متخصصة",
-    icon: Building2,
-    color: "#6B4C93",
-    bg: "#6B4C9310",
-    border: "#6B4C9330",
-    description: "أدر فريقك، راقب التقدم واشترك بالخطة المؤسسية.",
-    image: "/images/admin-role.png",
-    badge: "فضاء إدارة المراكز",
-    title: "إدارة مؤسسية شاملة للمركز والأطقم",
-    subtitle: "لوحة قيادة مركزية لمراقبة أداء الأخصائيين، تنظيم المواعيد والتحكم في الخطة المؤسسية.",
-  },
 ];
 
+import { useRouter } from "next/navigation";
+
 export default function RegisterPage() {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<string>("parent");
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    password: "",
+    wilaya: "",
+    speciality: "",
+    licenseNumber: "",
+    experience: "",
+  });
+
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          role: selectedRole.toUpperCase(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setError(data.error || "فشل إنشاء الحساب");
+        setLoading(false);
+        return;
+      }
+
+      router.push(data.data.redirectTo);
+      router.refresh();
+    } catch {
+      setError("حدث خطأ أثناء الاتصال بالخادم");
+      setLoading(false);
+    }
+  };
 
   const currentRole = roles.find((r) => r.id === selectedRole) || roles[0];
 
@@ -232,7 +266,13 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error && (
+                    <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-sm font-600 rounded-xl text-center">
+                      {error}
+                    </div>
+                  )}
+
                   {/* Full Name */}
                   <div>
                     <label className="block text-xs font-700 text-[#374151] mb-1.5">
@@ -242,6 +282,8 @@ export default function RegisterPage() {
                       <input
                         type="text"
                         id="register-name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="الاسم واللقب"
                         className="input-rtl input-icon-right h-12 text-sm"
                         required
@@ -249,25 +291,6 @@ export default function RegisterPage() {
                       <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                     </div>
                   </div>
-
-                  {/* Center Name (Admin role) */}
-                  {selectedRole === "admin" && (
-                    <div>
-                      <label className="block text-xs font-700 text-[#374151] mb-1.5">
-                        اسم المركز أو الجمعية *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id="register-center"
-                          placeholder="مركز النور لرعاية التوحد"
-                          className="input-rtl input-icon-right h-12 text-sm"
-                          required
-                        />
-                        <Building2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
 
                   {/* Specialty (Specialist role) */}
                   {selectedRole === "specialist" && (
@@ -278,15 +301,16 @@ export default function RegisterPage() {
                       <div className="relative">
                         <select
                           id="register-specialty"
+                          value={formData.speciality}
+                          onChange={(e) => setFormData({ ...formData, speciality: e.target.value })}
                           className="input-rtl input-icon-right h-12 text-sm appearance-none bg-white cursor-pointer"
                           required
                         >
                           <option value="">اختر تخصصك</option>
-                          <option value="psychologist">أخصائي نفسي</option>
-                          <option value="speech">أخصائي أرطوفوني (نطق)</option>
-                          <option value="educator">مربّي متخصص</option>
-                          <option value="doctor">طبيب أطفال</option>
-                          <option value="other">تخصص آخر</option>
+                          <option value="أخصائي نفسي للأطفال">أخصائي نفسي للأطفال</option>
+                          <option value="أخصائية نطق وتواصل">أخصائية نطق وتواصل</option>
+                          <option value="مربّي متخصص">مربّي متخصص</option>
+                          <option value="طبيب أطفال">طبيب أطفال</option>
                         </select>
                         <Stethoscope className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                       </div>
@@ -302,6 +326,8 @@ export default function RegisterPage() {
                       <input
                         type="tel"
                         id="register-phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="05XXXXXXXX"
                         className="input-rtl input-icon-right h-12 text-sm text-left"
                         dir="ltr"
@@ -320,6 +346,8 @@ export default function RegisterPage() {
                       <input
                         type="email"
                         id="register-email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="example@email.com"
                         className="input-rtl input-icon-right h-12 text-sm text-left"
                         dir="ltr"
@@ -338,7 +366,9 @@ export default function RegisterPage() {
                       <input
                         type={showPassword ? "text" : "password"}
                         id="register-password"
-                        placeholder="8 أحرف على الأقل"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="6 أحرف على الأقل"
                         className="input-rtl input-icon-both h-12 text-sm"
                         required
                       />
@@ -385,10 +415,11 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     id="register-submit"
-                    className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-gradient-to-r from-[#1D5B79] to-[#2478a0] text-white font-700 text-sm hover:from-[#163f56] hover:to-[#1D5B79] transition-all duration-300 shadow-lg shadow-[#1D5B79]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-3"
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-gradient-to-r from-[#1D5B79] to-[#2478a0] text-white font-700 text-sm hover:from-[#163f56] hover:to-[#1D5B79] transition-all duration-300 shadow-lg shadow-[#1D5B79]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer mt-3 disabled:opacity-50"
                   >
                     <UserPlus className="w-4.5 h-4.5" />
-                    <span>إنشاء الحساب</span>
+                    <span>{loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}</span>
                   </button>
                 </form>
               </div>

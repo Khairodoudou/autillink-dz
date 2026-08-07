@@ -11,9 +11,8 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";
-import { mockChildren } from "@/lib/mock-data";
+import StatCard from "@/components/ui/StatCard";
 import {
   Chart,
   LineElement,
@@ -38,8 +37,40 @@ Chart.register(
 
 const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
+import { useState } from "react";
+
 export default function ParentDashboard() {
-  const child = mockChildren[0]; // آدم — primary child
+  const [childrenList, setChildrenList] = useState<any[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/parent/children")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.ok && res.data.length > 0) {
+          setChildrenList(res.data);
+          setSelectedChildId(res.data[0].id);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const child = childrenList.find((c) => c.id === selectedChildId) || childrenList[0];
+
+  if (loading) {
+    return <div className="p-8 text-center text-[#6B7280]">جاري تحميل البيانات...</div>;
+  }
+
+  if (!child) {
+    return (
+      <div className="p-8 text-center bg-white rounded-2xl border border-[#E8D8C4] my-8">
+        <h3 className="text-lg font-800 text-[#1F2937] mb-2">لا يوجد أطفال مسجلون بعد</h3>
+        <p className="text-sm text-[#6B7280] mb-4">قم بإضافة طفلك الأول لمتابعة تطوره اليومي</p>
+        <a href="/parent/children" className="inline-block px-5 py-2.5 bg-[#2E8B7E] text-white font-700 rounded-xl">إضافة طفل</a>
+      </div>
+    );
+  }
 
   const chartData = {
     labels: days,
@@ -119,9 +150,10 @@ export default function ParentDashboard() {
 
       {/* Child Selector */}
       <div className="flex gap-3 mb-6 overflow-x-auto pb-1">
-        {mockChildren.map((c) => (
+        {childrenList.map((c) => (
           <button
             key={c.id}
+            onClick={() => setSelectedChildId(c.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-600 flex-shrink-0 transition-all ${
               c.id === child.id
                 ? "bg-[#2E8B7E] text-white border-[#2E8B7E] shadow"
@@ -238,14 +270,14 @@ export default function ParentDashboard() {
           <p className="text-xs text-[#6B7280]">اطلع على التقارير المرسلة</p>
         </a>
         <a
-          href="/parent/messages"
+          href="/parent/appointments"
           className="bg-white rounded-2xl border border-[#E8D8C4] p-5 hover:shadow-md transition-shadow"
         >
           <div className="w-10 h-10 rounded-xl bg-[#E97F6B]/10 flex items-center justify-center mb-3">
-            <MessageCircle className="w-5 h-5 text-[#E97F6B]" />
+            <Calendar className="w-5 h-5 text-[#E97F6B]" />
           </div>
-          <h3 className="text-sm font-700 text-[#1F2937] mb-1">رسائل جديدة</h3>
-          <p className="text-xs text-[#6B7280]">2 رسائل غير مقروءة</p>
+          <h3 className="text-sm font-700 text-[#1F2937] mb-1">جدول المواعيد</h3>
+          <p className="text-xs text-[#6B7280]">حجز وتتبع المواعيد</p>
         </a>
       </div>
     </div>

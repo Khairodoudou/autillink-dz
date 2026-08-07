@@ -2,7 +2,6 @@
 // app/admin/layout.tsx
 import { useState } from "react";
 import AdminSidebar from "@/components/admin/Sidebar";
-import SpaceSwitcher from "@/components/ui/SpaceSwitcher";
 import { Bell, Menu } from "lucide-react";
 
 export default function AdminLayout({
@@ -47,23 +46,31 @@ export default function AdminLayout({
             >
               <Menu className="w-5 h-5" />
             </button>
-            <SpaceSwitcher />
           </div>
 
           <div className="flex-1" />
 
           <div className="flex items-center gap-3">
-            <button className="relative w-9 h-9 rounded-xl bg-[#F0EBF8] flex items-center justify-center text-[#6B7280] hover:bg-[#E5D9F2] transition-colors">
+            {/* Notification Bell */}
+            <button 
+              type="button"
+              className="relative w-9 h-9 rounded-xl bg-[#F0EBF8] flex items-center justify-center text-[#6B7280] hover:bg-[#E5D9F2] focus:outline-none transition-colors"
+              aria-label="التنبيهات"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E97F6B] rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#E97F6B] rounded-full ring-2 ring-white" />
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-[#6B4C93] flex items-center justify-center text-white text-sm font-800">
-                م
-              </div>
+
+            <div className="h-5 w-px bg-[#E5D9F2]" />
+
+            {/* User Profile */}
+            <div className="flex items-center gap-2.5 select-none">
               <div className="hidden md:block text-right">
-                <p className="text-xs font-700 text-[#1F2937] leading-none">مدير النظام</p>
+                <p className="text-xs font-bold text-[#1F2937] leading-none">مدير النظام</p>
                 <p className="text-xs text-[#6B7280] mt-0.5">Admin</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-[#6B4C93] flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+                م
               </div>
             </div>
           </div>

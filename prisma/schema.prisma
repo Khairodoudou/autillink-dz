@@ -1,0 +1,219 @@
+// prisma/schema.prisma
+// AutiLink DZ — Schéma de base de données complet
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  PARENT
+  SPECIALIST
+  ADMIN
+}
+
+enum AutismLevel {
+  LEGER
+  MOYEN
+  SEVERE
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+// Jamais de rôle CHILD ici — l'enfant est un modèle Child séparé.
+
+model User {
+  id           String    @id @default(cuid())
+  role         Role
+  name         String
+  email        String    @unique
+  phone        String?
+  password     String    // hashé avec bcryptjs
+  wilaya       String?
+  address      String?
+  speciality   String?   // pour les spécialistes
+  licenseNumber String?  // pour les spécialistes
+  experience   Int?      // années d'expérience
+  isActive     Boolean   @default(true)
+  centerId     String?
+  center       Center?   @relation(fields: [centerId], references: [id])
+  children     Child[]   @relation("ParentChildren")
+  patients     Child[]   @relation("SpecialistPatients")
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reports      Report[]  @relation("ReportAuthor")
+  appointments Appointment[] @relation("SpecialistAppointments")
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ─── Center ───────────────────────────────────────────────────────────────────
+
+model Center {
+  id           String        @id @default(cuid())
+  name         String
+  director     String?
+  wilaya       String
+  address      String?
+  phone        String?
+  email        String?
+  status       String        @default("PENDING") // PENDING | ACTIVE | SUSPENDED
+  users        User[]
+  subscription Subscription?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+model Subscription {
+  id        String   @id @default(cuid())
+  centerId  String   @unique
+  center    Center   @relation(fields: [centerId], references: [id])
+  plan      String   // BASIC | STANDARD | PREMIUM
+  price     Int
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("ACTIVE") // ACTIVE | EXPIRED | CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IndividualSubscription {
+  id        String   @id @default(cuid())
+  parentId  String   @unique
+  price     Int      @default(800)
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("ACTIVE") // ACTIVE | EXPIRED | CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Child ────────────────────────────────────────────────────────────────────
+// L'enfant n'est PAS un User. Il est protégé par pinCode haché avec bcrypt.
+
+model Child {
+  id           String        @id @default(cuid())
+  name         String
+  birthDate    DateTime
+  autismLevel  AutismLevel?
+  pinCode      String        // 4 chiffres, TOUJOURS haché bcrypt, jamais en clair
+  avatarColor  String        @default("#E97F6B")
+  avatarInitial String?
+  parentId     String
+  parent       User          @relation("ParentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  specialistId String?
+  specialist   User?         @relation("SpecialistPatients", fields: [specialistId], references: [id])
+  reports      Report[]
+  assessments  Assessment[]
+  appointments Appointment[]
+  gameScores   GameScore[]
+  messages     Message[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// ─── Report ───────────────────────────────────────────────────────────────────
+
+model Report {
+  id         String   @id @default(cuid())
+  childId    String
+  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation("ReportAuthor", fields: [authorId], references: [id])
+  mood       Int?     // 1-5
+  sleepHours Float?
+  tantrums   Int?
+  newWords   String?  // JSON array stringifié
+  exercises  String?  // JSON array stringifié
+  notes      String?
+  type       String   @default("DAILY") // DAILY | CLINICAL
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── Assessment ───────────────────────────────────────────────────────────────
+
+model Assessment {
+  id         String   @id @default(cuid())
+  childId    String
+  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  authorId   String   // spécialiste qui a passé l'évaluation
+  type       String   // MCHAT_R | ADOS2 | CARS2 | VB_MAPP
+  answers    String   // JSON stringifié des réponses
+  score      Int
+  maxScore   Int
+  result     String   // interprétation textuelle
+  recommendation String?
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+}
+
+// ─── Appointment ──────────────────────────────────────────────────────────────
+
+model Appointment {
+  id           String   @id @default(cuid())
+  childId      String
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  specialistId String?
+  specialist   User?    @relation("SpecialistAppointments", fields: [specialistId], references: [id])
+  date         DateTime
+  time         String?
+  duration     Int      @default(60) // minutes
+  type         String   @default("SESSION") // SESSION | ASSESSMENT | CONSULTATION
+  status       String   @default("PENDING") // PENDING | CONFIRMED | DONE | CANCELLED
+  location     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── Message ──────────────────────────────────────────────────────────────────
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  childId    String?  // conversation liée à un enfant précis
+  child      Child?   @relation(fields: [childId], references: [id])
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ─── GameScore ────────────────────────────────────────────────────────────────
+
+model GameScore {
+  id        String   @id @default(cuid())
+  childId   String
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  gameType  String   // COLORS | SHAPES | NUMBERS | EMOTIONS | WORDS
+  stars     Int      // 1-3
+  playedAt  DateTime @default(now())
+}
+
+// ─── Complaint ────────────────────────────────────────────────────────────────
+
+model Complaint {
+  id         String   @id @default(cuid())
+  fromEmail  String
+  fromName   String
+  fromRole   String?
+  subject    String
+  message    String
+  priority   String   @default("MEDIUM") // LOW | MEDIUM | HIGH
+  status     String   @default("OPEN")   // OPEN | IN_PROGRESS | RESOLVED | CLOSED
+  assignedTo String?
+  resolution String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

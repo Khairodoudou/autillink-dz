@@ -13,10 +13,42 @@ import {
   Lock,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setError(data.error || "خطأ في تسجيل الدخول");
+        setLoading(false);
+        return;
+      }
+
+      router.push(data.data.redirectTo);
+      router.refresh();
+    } catch {
+      setError("حدث خطأ أثناء الاتصال بالخادم");
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full py-10 px-4 sm:px-8 lg:px-12 flex justify-center items-center">
@@ -79,7 +111,12 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-sm font-600 rounded-xl text-center">
+                  {error}
+                </div>
+              )}
               {/* Email Input */}
               <div>
                 <label htmlFor="login-email" className="block text-sm font-700 text-[#374151] mb-2">
@@ -95,6 +132,7 @@ export default function LoginPage() {
                     className="input-rtl input-icon-right h-13 text-sm font-500 text-left"
                     dir="ltr"
                     required
+                    suppressHydrationWarning
                   />
                   <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#9CA3AF] pointer-events-none" />
                 </div>
@@ -122,6 +160,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     className="input-rtl input-icon-both h-13 text-sm font-500"
                     required
+                    suppressHydrationWarning
                   />
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#9CA3AF] pointer-events-none" />
                   <button
@@ -143,10 +182,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 id="login-submit"
-                className="flex items-center justify-center gap-2.5 w-full h-13 rounded-2xl bg-gradient-to-r from-[#1D5B79] to-[#2478a0] text-white font-700 text-base hover:from-[#163f56] hover:to-[#1D5B79] transition-all duration-300 shadow-xl shadow-[#1D5B79]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                disabled={loading}
+                className="flex items-center justify-center gap-2.5 w-full h-13 rounded-2xl bg-gradient-to-r from-[#1D5B79] to-[#2478a0] text-white font-700 text-base hover:from-[#163f56] hover:to-[#1D5B79] transition-all duration-300 shadow-xl shadow-[#1D5B79]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
               >
                 <LogIn className="w-5 h-5" />
-                <span>تسجيل الدخول</span>
+                <span>{loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}</span>
               </button>
             </form>
           </div>

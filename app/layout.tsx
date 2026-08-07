@@ -27,6 +27,7 @@ export default function RootLayout({
       lang="ar"
       dir="rtl"
       className="h-full antialiased scroll-smooth"
+      suppressHydrationWarning
     >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,7 +41,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#FDF6EC]">
+      <body className="min-h-full flex flex-col bg-[#FDF6EC]" suppressHydrationWarning>
         {children}
       </body>
     </html>

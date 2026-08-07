@@ -21,7 +21,6 @@ const navItems = [
   { href: "/parent/daily-log",    label: "السجل اليومي", icon: ClipboardList },
   { href: "/parent/reports",      label: "التقارير",     icon: FileText },
   { href: "/parent/appointments", label: "المواعيد",     icon: Calendar },
-  { href: "/parent/messages",     label: "الرسائل",      icon: MessageSquare },
   { href: "/parent/subscription", label: "الاشتراك",     icon: CreditCard },
   { href: "/parent/settings",     label: "الإعدادات",    icon: Settings },
 ];

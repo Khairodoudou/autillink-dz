@@ -1,17 +1,18 @@
 "use client";
 // app/specialist/reports/new/page.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Send, CheckCircle } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { mockPatients } from "@/lib/mock-data";
 
 const generalStatusOptions = ["ممتاز", "جيد", "متوسط", "يحتاج مراجعة", "مقلق"];
 const reportTypes = ["تقرير شهري", "تقرير تقييم", "تقرير متابعة"];
 
 export default function NewReportPage() {
+  const [patients, setPatients] = useState<any[]>([]);
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    patientId: mockPatients[0].id,
+    patientId: "",
     type: reportTypes[0],
     generalStatus: "جيد",
     communicationObservation: "",
@@ -23,14 +24,52 @@ export default function NewReportPage() {
     nextGoals: "",
   });
 
+  useEffect(() => {
+    fetch("/api/specialist/patients")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok && res.data.length > 0) {
+          setPatients(res.data);
+          setForm((f) => ({ ...f, patientId: res.data[0].id }));
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   const set = (field: string, val: string) => setForm((f) => ({ ...f, [field]: val }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    const notesContent = `
+[الحالة العامة]: ${form.generalStatus}
+[ملاحظات التواصل]: ${form.communicationObservation}
+[التفاعل الاجتماعي]: ${form.socialObservation}
+[السلوك]: ${form.behaviorObservation}
+[ملخص التقدم]: ${form.progressSummary}
+[التحديات]: ${form.challenges}
+[التوصيات]: ${form.recommendations}
+[الأهداف القادمة]: ${form.nextGoals}
+    `.trim();
+
+    try {
+      const res = await fetch("/api/specialist/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childId: form.patientId,
+          type: form.type === "تقرير شهري" ? "MONTHLY" : form.type === "تقرير تقييم" ? "ASSESSMENT" : "CLINICAL",
+          notes: notesContent,
+        }),
+      });
+      if (res.ok) {
+        setSent(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const patient = mockPatients.find((p) => p.id === form.patientId) ?? mockPatients[0];
+  const patient = patients.find((p) => p.id === form.patientId) ?? patients[0] ?? { name: "" };
 
   if (sent) {
     return (
@@ -78,7 +117,7 @@ export default function NewReportPage() {
                   onChange={(e) => set("patientId", e.target.value)}
                   className="input-rtl"
                 >
-                  {mockPatients.map((p) => (
+                  {patients.map((p: any) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>

@@ -1,10 +1,9 @@
 "use client";
 // app/specialist/patients/[id]/page.tsx
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, User, Calendar, FileText, TrendingUp } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { mockPatients } from "@/lib/mock-data";
 import {
   Chart,
   LineElement,
@@ -20,15 +19,32 @@ import { Line } from "react-chartjs-2";
 Chart.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
 
 const levelColors: Record<string, { bg: string; text: string }> = {
-  خفيف:  { bg: "#2E8B7E15", text: "#2E8B7E" },
-  متوسط: { bg: "#F5B94215", text: "#c49012" },
-  شديد:  { bg: "#EF444415", text: "#EF4444" },
+  "خفيف":  { bg: "#2E8B7E15", text: "#2E8B7E" },
+  "متوسط": { bg: "#F5B94215", text: "#c49012" },
+  "شديد":  { bg: "#EF444415", text: "#EF4444" },
 };
 
 export default function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const patient = mockPatients.find((p) => p.id === id) ?? mockPatients[0];
-  const lvl = levelColors[patient.diagnosisLevel];
+  const [patient, setPatient] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/specialist/patients")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) {
+          const found = res.data.find((p: any) => p.id === id);
+          setPatient(found || res.data[0] || null);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div className="p-12 text-center text-[#9CA3AF]">جاري التحميل...</div>;
+  if (!patient) return <div className="p-12 text-center text-[#9CA3AF]">المريض غير موجود</div>;
+
+  const lvl = levelColors[patient.diagnosisLevel] ?? levelColors["متوسط"];
 
   const skillColors = {
     communication: "#1D5B79",
@@ -46,13 +62,15 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
     cognitive: "المعرفي",
   };
 
-  const months = patient.skillsHistory.map((h) => h.month);
+  const skillsHistory: any[] = patient.skillsHistory ?? [];
+
+  const months = skillsHistory.map((h: any) => h.month);
 
   const chartData = {
     labels: months,
     datasets: Object.entries(skillColors).map(([key, color]) => ({
       label: skillLabels[key],
-      data: patient.skillsHistory.map((h) => h[key as keyof typeof h] as number),
+      data: skillsHistory.map((h: any) => (h[key] as number) ?? 0),
       borderColor: color,
       backgroundColor: `${color}15`,
       borderWidth: 2,

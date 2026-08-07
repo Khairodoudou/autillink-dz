@@ -1,9 +1,8 @@
 "use client";
 // app/specialist/assessments/page.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClipboardCheck, ChevronRight, X, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { mockAssessments } from "@/lib/mock-data";
 
 const tools = [
   {
@@ -122,6 +121,13 @@ export default function AssessmentsPage() {
   const [openTool, setOpenTool] = useState<ToolId | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [pastAssessments, setPastAssessments] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/specialist/assessments")
+      .then((r) => r.json())
+      .then((res) => { if (res.ok) setPastAssessments(res.data); });
+  }, []);
 
   const tool = tools.find((t) => t.id === openTool);
 
@@ -161,13 +167,13 @@ export default function AssessmentsPage() {
       />
 
       {/* Past Assessments */}
-      {mockAssessments.length > 0 && (
+      {pastAssessments.length > 0 && (
         <div className="mb-8">
           <h2 className="text-sm font-800 text-[#6B7280] uppercase tracking-wide mb-4">
             آخر التقييمات المُجراة
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {mockAssessments.map((a) => {
+            {pastAssessments.map((a: any) => {
               const t = tools.find((t) => t.id === a.tool);
               return (
                 <div key={a.id} className="bg-white rounded-xl border border-[#D6E8F0] p-4 shadow-sm flex gap-3 items-start">

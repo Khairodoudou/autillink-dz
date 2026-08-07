@@ -3,7 +3,6 @@
 import { Building2, Users, Baby, Activity, TrendingUp, DollarSign } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";
-import { mockAdminStats } from "@/lib/mock-data";
 import {
   Chart,
   BarElement,
@@ -20,17 +19,33 @@ import { LayoutDashboard } from "lucide-react";
 
 Chart.register(BarElement, LinearScale, CategoryScale, Tooltip, Legend, LineElement, PointElement, Filler);
 
-export default function AdminDashboard() {
-  const stats = mockAdminStats;
+import { useEffect, useState } from "react";
 
-  const months = stats.growthData.map((d) => d.month);
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.ok) setStats(res.data);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !stats) {
+    return <div className="p-8 text-center text-[#6B7280]">جاري تحميل البيانات...</div>;
+  }
+
+  const months = stats.growthData ? stats.growthData.map((d: any) => d.month) : [];
 
   const usersChartData = {
     labels: months,
     datasets: [
       {
         label: "المستخدمون",
-        data: stats.growthData.map((d) => d.users),
+        data: stats.growthData.map((d: any) => d.users),
         borderColor: "#6B4C93",
         backgroundColor: "rgba(107, 76, 147, 0.15)",
         borderWidth: 2.5,
@@ -41,7 +56,7 @@ export default function AdminDashboard() {
       },
       {
         label: "الأطفال",
-        data: stats.growthData.map((d) => d.children),
+        data: stats.growthData.map((d: any) => d.children),
         borderColor: "#E97F6B",
         backgroundColor: "rgba(233,127,107,0.08)",
         borderWidth: 2.5,
@@ -58,7 +73,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         label: "الجلسات",
-        data: stats.growthData.map((d) => d.sessions),
+        data: stats.growthData.map((d: any) => d.sessions),
         backgroundColor: "rgba(29, 91, 121, 0.2)",
         borderColor: "#1D5B79",
         borderWidth: 2,
@@ -185,9 +200,24 @@ export default function AdminDashboard() {
       {/* Quick Info */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         {[
-          { label: "أولياء الأمور", value: stats.totalParents, color: "#E97F6B", pct: Math.round(stats.totalParents / stats.totalUsers * 100) },
-          { label: "الأخصائيون", value: stats.totalSpecialists, color: "#1D5B79", pct: Math.round(stats.totalSpecialists / stats.totalUsers * 100) },
-          { label: "مراكز معتمدة", value: stats.totalCenters - 2, color: "#2E8B7E", pct: Math.round((stats.totalCenters - 2) / stats.totalCenters * 100) },
+          {
+            label: "أولياء الأمور",
+            value: stats.totalParents ?? 0,
+            color: "#E97F6B",
+            pct: stats.totalUsers ? Math.round(((stats.totalParents ?? 0) / stats.totalUsers) * 100) : 0,
+          },
+          {
+            label: "الأخصائيون",
+            value: stats.totalSpecialists ?? 0,
+            color: "#1D5B79",
+            pct: stats.totalUsers ? Math.round(((stats.totalSpecialists ?? 0) / stats.totalUsers) * 100) : 0,
+          },
+          {
+            label: "مراكز معتمدة",
+            value: stats.activeCenters ?? stats.totalCenters ?? 0,
+            color: "#2E8B7E",
+            pct: stats.totalCenters ? Math.round(((stats.activeCenters ?? stats.totalCenters ?? 0) / stats.totalCenters) * 100) : 0,
+          },
         ].map(({ label, value, color, pct }) => (
           <div key={label} className="bg-white rounded-2xl border border-[#E5D9F2] p-5 shadow-sm">
             <div className="flex justify-between items-center mb-3">

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  Building2,
   CreditCard,
   AlertCircle,
   Settings,
@@ -16,7 +15,6 @@ import {
 const navItems = [
   { href: "/admin/dashboard",   label: "لوحة التحكم",    icon: LayoutDashboard },
   { href: "/admin/users",       label: "المستخدمون",     icon: Users },
-  { href: "/admin/centers",     label: "المراكز",         icon: Building2 },
   { href: "/admin/billing",     label: "الفواتير",        icon: CreditCard },
   { href: "/admin/complaints",  label: "الشكاوى",         icon: AlertCircle },
   { href: "/admin/settings",    label: "الإعدادات",       icon: Settings },
