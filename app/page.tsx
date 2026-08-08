@@ -6,6 +6,7 @@ import StatsSection from "@/components/public/StatsSection";
 import FeaturesPreview from "@/components/public/FeaturesPreview";
 import HowItWorks from "@/components/public/HowItWorks";
 import CtaBanner from "@/components/public/CtaBanner";
+import PublicChatbot from "@/components/public/PublicChatbot";
 
 export const metadata: Metadata = {
   title: "أوتيلينك دي زي — منصة متابعة طفل التوحد في الجزائر",
@@ -25,6 +26,7 @@ export default function HomePage() {
         <CtaBanner />
       </main>
       <Footer />
+      <PublicChatbot />
     </div>
   );
 }

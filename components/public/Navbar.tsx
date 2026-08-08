@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -10,7 +11,7 @@ import {
   Home,
   Info,
   Star,
-  CreditCard,
+  HelpCircle,
   Phone,
   LogIn,
   UserPlus,
@@ -20,7 +21,7 @@ const navLinks = [
   { href: "/", label: "الرئيسية", icon: Home },
   { href: "/about", label: "من نحن", icon: Info },
   { href: "/features", label: "المميزات", icon: Star },
-  { href: "/pricing", label: "الأسعار", icon: CreditCard },
+  { href: "/pricing", label: "الأسئلة الشائعة", icon: HelpCircle },
   { href: "/testimonials", label: "آراء الأسر", icon: Heart },
   { href: "/contact", label: "اتصل بنا", icon: Phone },
 ];
@@ -28,6 +29,7 @@ const navLinks = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -59,15 +61,26 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[0.9rem] font-500 text-[#374151] hover:text-[#1D5B79] hover:bg-[#1D5B79]/8 transition-all duration-200"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.9rem] transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#1D5B79]/10 text-[#1D5B79] border-2 border-[#1D5B79] font-700 shadow-sm"
+                      : "text-[#374151] hover:text-[#1D5B79] hover:bg-[#1D5B79]/8 border-2 border-transparent font-500"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* CTA Buttons */}
@@ -109,14 +122,23 @@ export default function Navbar() {
           <div className="container-rtl py-4 flex flex-col gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
+
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#374151] hover:text-[#1D5B79] hover:bg-[#1D5B79]/8 transition-all duration-200 font-500"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#1D5B79] text-white font-700 shadow-md"
+                      : "text-[#374151] hover:text-[#1D5B79] hover:bg-[#1D5B79]/8 font-500"
+                  }`}
                 >
-                  <Icon className="w-5 h-5 text-[#1D5B79]" />
+                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-[#1D5B79]"}`} />
                   {link.label}
                 </Link>
               );

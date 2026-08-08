@@ -117,7 +117,7 @@ export default function Footer() {
               {[
                 { href: "/about", label: "من نحن" },
                 { href: "/features", label: "المميزات والخدمات" },
-                { href: "/pricing", label: "خطط الأسعار" },
+                { href: "/pricing", label: "الأسئلة الشائعة" },
                 { href: "/testimonials", label: "آراء وأصداء الأسر" },
                 { href: "/contact", label: "مركز المساعدة والتواصل" },
               ].map((link) => (

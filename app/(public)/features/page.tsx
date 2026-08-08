@@ -235,7 +235,7 @@ export default function FeaturesPage() {
               href="/pricing"
               className="flex items-center gap-2 px-8 py-4 rounded-full border-2 border-[#1D5B79] text-[#1D5B79] font-600 hover:bg-[#1D5B79]/8 transition-all"
             >
-              عرض الأسعار
+              الأسئلة الشائعة
             </Link>
           </div>
         </div>

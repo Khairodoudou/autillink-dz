@@ -38,12 +38,12 @@ export default function CtaBanner() {
                 href="/pricing"
                 className="flex items-center gap-2.5 px-8 py-4 rounded-full border-2 border-white/40 text-white font-600 text-base hover:bg-white/10 transition-all duration-300"
               >
-                عرض الأسعار
+                الأسئلة الشائعة
               </Link>
             </div>
 
             <p className="text-white/50 text-sm mt-6">
-              سهولة التغيير أو اختيار الخطة في أي وقت
+              نحن هنا لإجابة جميع أسئلتكم ومساعدتكم في أي وقت
             </p>
           </div>
         </div>
