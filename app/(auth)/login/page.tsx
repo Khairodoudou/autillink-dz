@@ -111,18 +111,18 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
               {error && (
                 <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-sm font-600 rounded-xl text-center">
                   {error}
                 </div>
               )}
               {/* Email Input */}
-              <div>
+              <div suppressHydrationWarning>
                 <label htmlFor="login-email" className="block text-sm font-700 text-[#374151] mb-2">
                   البريد الإلكتروني
                 </label>
-                <div className="relative">
+                <div className="relative" suppressHydrationWarning>
                   <input
                     type="email"
                     id="login-email"
@@ -139,19 +139,11 @@ export default function LoginPage() {
               </div>
 
               {/* Password Input */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="login-password" className="block text-sm font-700 text-[#374151]">
-                    كلمة المرور
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-600 text-[#1D5B79] hover:underline"
-                  >
-                    نسيت كلمة المرور؟
-                  </Link>
-                </div>
-                <div className="relative">
+              <div suppressHydrationWarning>
+                <label htmlFor="login-password" className="block text-sm font-700 text-[#374151] mb-2">
+                  كلمة المرور
+                </label>
+                <div className="relative" suppressHydrationWarning>
                   <input
                     type={showPassword ? "text" : "password"}
                     id="login-password"

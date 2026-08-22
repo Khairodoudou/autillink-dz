@@ -266,7 +266,7 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
                   {error && (
                     <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-sm font-600 rounded-xl text-center">
                       {error}
@@ -274,11 +274,11 @@ export default function RegisterPage() {
                   )}
 
                   {/* Full Name */}
-                  <div>
+                  <div suppressHydrationWarning>
                     <label className="block text-xs font-700 text-[#374151] mb-1.5">
                       الاسم الكامل *
                     </label>
-                    <div className="relative">
+                    <div className="relative" suppressHydrationWarning>
                       <input
                         type="text"
                         id="register-name"
@@ -287,6 +287,7 @@ export default function RegisterPage() {
                         placeholder="الاسم واللقب"
                         className="input-rtl input-icon-right h-12 text-sm"
                         required
+                        suppressHydrationWarning
                       />
                       <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                     </div>
@@ -294,17 +295,18 @@ export default function RegisterPage() {
 
                   {/* Specialty (Specialist role) */}
                   {selectedRole === "specialist" && (
-                    <div>
+                    <div suppressHydrationWarning>
                       <label className="block text-xs font-700 text-[#374151] mb-1.5">
                         التخصص الطبي / التربوي *
                       </label>
-                      <div className="relative">
+                      <div className="relative" suppressHydrationWarning>
                         <select
                           id="register-specialty"
                           value={formData.speciality}
                           onChange={(e) => setFormData({ ...formData, speciality: e.target.value })}
                           className="input-rtl input-icon-right h-12 text-sm appearance-none bg-white cursor-pointer"
                           required
+                          suppressHydrationWarning
                         >
                           <option value="">اختر تخصصك</option>
                           <option value="أخصائي نفسي للأطفال">أخصائي نفسي للأطفال</option>
@@ -318,11 +320,11 @@ export default function RegisterPage() {
                   )}
 
                   {/* Phone */}
-                  <div>
+                  <div suppressHydrationWarning>
                     <label className="block text-xs font-700 text-[#374151] mb-1.5">
                       رقم الهاتف *
                     </label>
-                    <div className="relative">
+                    <div className="relative" suppressHydrationWarning>
                       <input
                         type="tel"
                         id="register-phone"
@@ -332,17 +334,18 @@ export default function RegisterPage() {
                         className="input-rtl input-icon-right h-12 text-sm text-left"
                         dir="ltr"
                         required
+                        suppressHydrationWarning
                       />
                       <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Email */}
-                  <div>
+                  <div suppressHydrationWarning>
                     <label className="block text-xs font-700 text-[#374151] mb-1.5">
                       البريد الإلكتروني *
                     </label>
-                    <div className="relative">
+                    <div className="relative" suppressHydrationWarning>
                       <input
                         type="email"
                         id="register-email"
@@ -352,17 +355,18 @@ export default function RegisterPage() {
                         className="input-rtl input-icon-right h-12 text-sm text-left"
                         dir="ltr"
                         required
+                        suppressHydrationWarning
                       />
                       <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Password */}
-                  <div>
+                  <div suppressHydrationWarning>
                     <label className="block text-xs font-700 text-[#374151] mb-1.5">
                       كلمة المرور *
                     </label>
-                    <div className="relative">
+                    <div className="relative" suppressHydrationWarning>
                       <input
                         type={showPassword ? "text" : "password"}
                         id="register-password"
@@ -371,6 +375,7 @@ export default function RegisterPage() {
                         placeholder="6 أحرف على الأقل"
                         className="input-rtl input-icon-both h-12 text-sm"
                         required
+                        suppressHydrationWarning
                       />
                       <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                       <button
