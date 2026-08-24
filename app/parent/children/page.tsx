@@ -243,13 +243,6 @@ export default function ChildrenPage() {
                       <p className="text-xs text-[#6B7280]">تمارين</p>
                     </div>
                   </div>
-
-                  {/* Specialist Info */}
-                  <div className="bg-[#F5E8D4] rounded-xl p-3 mb-5">
-                    <p className="text-xs text-[#6B7280] mb-0.5">الأخصائي المتابع</p>
-                    <p className="text-sm font-700 text-[#1F2937]">{child.specialistName}</p>
-                    <p className="text-xs text-[#6B7280] mt-0.5">{child.centerName}</p>
-                  </div>
                 </div>
               </div>
 
@@ -440,11 +433,6 @@ export default function ChildrenPage() {
                             {formData.diagnosisLevel}
                           </span>
                         </div>
-                      </div>
-
-                      <div className="bg-[#F5E8D4] rounded-lg p-2 text-xs text-[#6B7280]">
-                        <p className="font-700 text-[#1F2937]">{formData.specialistName}</p>
-                        <p className="text-[10px] truncate">{formData.centerName}</p>
                       </div>
                     </div>
                   </div>
